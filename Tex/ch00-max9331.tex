@@ -1,0 +1,402 @@
+\chapter{准备开发环境}
+
+> the ideology of ptxdist, go mainline
+
+\section{Linux~操作系统}
+我们建议新近发布的 LTS 版本的 Ubuntu 操作系统。
+在本文档中，我们同时使用 20.04 和 16.04 这两个版本。
+在新安装的系统，一般需要安装一些必要的软件包。
+除了一些日常使用的工具之外，特别还需要如下工具：
+
+\begin{lstlisting}
+sudo apt-get install oselas.toolchain-2020.08.0-mips-softfloat-linux-gnu
+sudo apt-get install libxml-parser-perl
+sudo apt-get install python3-setuptools
+sudo apt-get install bc
+sudo apt-get install dialog
+\end{lstlisting}
+
+如果你发现有任何纰漏，请不吝向我们汇报。
+我们将及时更新，以保证文档准确。
+
+一般来说，验证软件的最好方式，
+就是把固件烧到目标开发板上，这样跟实际运行情况最为接近。
+但是这种方式比较费时费力。
+在开发阶段，一般不这么做，而是在阶段性验证时，
+才采取这种方法。
+
+一般在开发阶段，充分利用网络的便利性，
+除了引导程序之外，其它文件均放在服务器上。
+然后由引导程序通过网络获取最新的编译结果文件进行运行，省时省力。
+
+
+
+\section{TFTP~服务}
+ubuntu 20.04
+\begin{lstlisting}  
+  duhuanpeng@black:~$ sudo apt-get install tftpd-hpa
+  duhuanpeng@black:~$ sudo apt-get install nfs-kernel-server
+\end{lstlisting}
+
+TFTP~服务器文件目录，注意这两个版本之间的默认目录并不相同。
+
+ubuntu 20.04
+\begin{lstlisting}  
+  /srv/tftp/
+  /etc/default/tftpd-hpa
+\end{lstlisting}
+
+ubuntu 16.04
+\begin{lstlisting}
+  /var/lib/tftpboot/
+\end{lstlisting}
+
+\section{NFS~服务}
+NFS~服务在这里是用来存放``根文件系统''，应用程序可以存放在这里。
+
+ubuntu 16.04
+\begin{lstlisting}
+等我换电脑看看，但应该于20.04一样。
+\end{lstlisting}
+  
+
+ubuntu 20.04
+\begin{lstlisting}
+/home/none/nfsroot *(rw,no_root_squash,sync,no_subtree_check)
+\end{lstlisting}
+
+\section{DHCP~服务}
+DHCP~服务可以让~IP~地址设置自动化，比较方便。
+多数情况下，你的工作环境中有路由器存在，
+并且路由器开启了~DHCP~就不需要配置这项服务。
+
+有时候，开发用的机器使用网线与开发板直接连接，不存在路由器。
+这时候就需要在电脑上开启DHCP服务避免繁琐的静态~IP~配置。
+
+\begin{lstlisting}
+interface=enp2s0
+no-hosts
+dhcp-range=192.168.1.80,192.168.1.150,255.255.255.0,12h
+port=5353
+\end{lstlisting}
+
+
+\chapter{编译工具}
+
+\section{获取~DistroKit~基础开发包}
+
+下载开发包 DistroKit，并检查对应的 ptxdist 工具版本。。
+
+\begin{lstlisting}
+
+dhu@debian-2gb-nbg1-1:~$ git clone https://git.pengutronix.de/git/DistroKit  
+Cloning ilnto 'DistroKit'...                                                  
+remote: Counting objects: 4744, done.
+remote: Compressing objects: 100% (3304/3304), done.                         
+remote: Total 4744 (delta 3358), reused 1846 (delta 1235)                    
+Receiving objects: 100% (4744/4744), 13.86 MiB | 9.56 MiB/s, done.           
+Resolving deltas: 100% (3358/3358), done.                                    
+dhu@debian-2gb-nbg1-1:~$ cd DistroKit/
+dhu@debian-2gb-nbg1-1:~/DistroKit$ head configs/ptxconfig                    
+#
+# Automatically generated file; DO NOT EDIT.                                 
+# PTXdist 2020.09.0                                                          
+#                                                                            
+PTXCONF_DATAPARTITION=y                                                      
+                                                                             
+#
+# ------------------------------------
+#
+
+
+当前的例子版本为”PTXdist 2020.09.0“
+
+\end{lstlisting}
+
+\section{从源码安装~ptxdist~工具}
+下载 ptxdist 工具源码，并根据上述的版本选择对应的 tag 进行编译。
+
+\begin{lstlisting}
+  
+
+dhu@debian-2gb-nbg1-1:~$ git clone https://git.pengutronix.de/git/ptxdist
+Cloning into 'ptxdist'...
+remote: Counting objects: 131642, done.
+remote: Compressing objects: 100% (30308/30308), done.
+remote: Total 131642 (delta 99940), reused 129687 (delta 98491)
+Receiving objects: 100% (131642/131642), 37.48 MiB | 14.69 MiB/s, done.
+Resolving deltas: 100% (99940/99940), done.
+dhu@debian-2gb-nbg1-1:~$ cd ptxdist/
+dhu@debian-2gb-nbg1-1:~/ptxdist$ git tag | grep 2020.09
+ptxdist-2020.09.0
+dhu@debian-2gb-nbg1-1:~/ptxdist$ git checkout ptxdist-2020.09.0
+Note: checking out 'ptxdist-2020.09.0'.
+
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by performing another checkout.
+
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -b with the checkout command again. Example:
+
+
+  git checkout -b <new-branch-name>
+
+
+HEAD is now at 86a6ec45a qemu: qemu-cross: set argv0
+
+\end{lstlisting}
+
+
+配置，这里为了避免使用 root 权限，将安装路径设置为个人用户目录下，可以根据实际情况更改，例如：/home/dhu/opt/usr/local 。
+
+\begin{lstlisting}
+
+dhu@debian-2gb-nbg1-1:~/ptxdist$ ./autogen.sh
+dhu@debian-2gb-nbg1-1:~/ptxdist$ ./configure --prefix=/mnt/HC_Volume_6772648/workdir/opt/usr/local
+
+
+
+
+
+
+dhu@debian-2gb-nbg1-1:~/ptxdist$ ./configure --prefix=/mnt/HC_Volume_6772648/workdir/opt/usr/local                                                            
+checking build system type... x86_64-unknown-linux-gnu
+checking host system type... x86_64-unknown-linux-gnu
+checking for ptxdist patches... yes                                                                                                                           
+checking for gcc... gcc
+(...more...)
+checking whether /usr/bin/patch will work... yes                           
+
+
+configure: creating ./config.status
+config.status: creating Makefile
+
+
+ptxdist version 2020.09.0 configured.
+Using '/mnt/HC_Volume_6772648/workdir/opt/usr/local' for installation prefix.
+
+
+Report bugs to ptxdist@pengutronix.de
+
+\end{lstlisting}
+
+
+\section{编译~ptxdist}
+
+\begin{lstlisting}
+  
+
+
+dhu@debian-2gb-nbg1-1:~/ptxdist$ make
+building conf and mconf ...                                               
+make[1]: Entering directory '/mnt/HC_Volume_6772648/workdir/ptxdist/scripts/kconfig'                        
+gcc -g -O2 -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600 -DCURSES_LOC="<curses.h>"
+-DKBUILD_NO_NLS -DPACKAGE='"ptxdist"' -DCONFIG_='"PTXCONF_"' -c confdata.c -o confdata.o                   
+(...more...)
+gcc -g -O2 -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600 -DCURSES_LOC="<curses.h>"
+-DKBUILD_NO_NLS -DPACKAGE='"ptxdist"' -DCONFIG_='"PTXCONF_"' -c nconf.gui.c -o nconf.gui.o
+gcc confdata.o expr.o lexer.lex.o parser.tab.o preprocess.o symbol.o nconf.o nconf.gui.o  -o nconf -lncurses -ltinfo -lpanel -lmenu                  
+rm parser.tab.c parser.tab.h lexer.lex.c                                  
+make[1]: Leaving directory '/mnt/HC_Volume_6772648/workdir/ptxdist/scripts/kconfig'
+done.
+preparing PTXdist environment ... done
+
+\end{lstlisting}
+
+编译如果没有出现错误，接着进行安装：
+
+\begin{lstlisting}
+  
+
+dhu@debian-2gb-nbg1-1:~/ptxdist$ make install
+building conf and mconf ...
+make[1]: Entering directory '/mnt/HC_Volume_6772648/workdir/ptxdist/scripts/kconfig'
+make[1]: 'conf' is up to date.
+make[1]: 'mconf' is up to date.
+make[1]: 'nconf' is up to date.
+make[1]: Leaving directory '/mnt/HC_Volume_6772648/workdir/ptxdist/scripts/kconfig'
+done.
+preparing PTXdist environment ... done
+installing PTXdist to /mnt/HC_Volume_6772648/workdir/opt/usr/local...
+./
+./patches/
+./patches/libxslt-1.1.29/
+(...more...)
+
+\end{lstlisting}
+
+
+编译完成之后，将 ptxdist 所在的路径加入~PATH
+\begin{lstlisting}
+dhu@debian-2gb-nbg1-1:~/DistroKit$ export PATH=”$PATH:/mnt/HC_Volume_6772648/workdir/opt/usr/local/bin”
+\end{lstlisting}
+
+\section{安装工具链}
+工具链是~toolchain~的直译，里面包含了编译器、格式转换工具等。
+这里的交叉编译工具，我们通过添加源，然后使用~apt~命令进行安装。
+由于网络环境各异，有时候可以在工作网络中部署一个镜像，这样能大大提高安装速度。
+（这将在未来进行详细描述）
+
+添加源，编辑文件 vim /etc/apt/sources.list 再添加如下一行
+
+ubuntu 20.04
+\begin{lstlisting} 
+  deb http://debian.pengutronix.de/debian/ focal main contrib non-free
+\end{lstlisting}
+
+ubuntu 16.04
+\begin{lstlisting} 
+  deb http://debian.pengutronix.de/debian/ xenial main contrib non-free
+\end{lstlisting}
+
+更新索引后，安装工具链。
+\begin{lstlisting} 
+duhuanpeng@black:/etc/apt$ sudo apt -o="Acquire::AllowInsecureRepositories=true" update
+
+duhuanpeng@black:~/wip/ath79/DistroKit$ sudo apt-get install oselas.toolchain-2020.08-mips-softfloat-linux-gnu 
+duhuanpeng@black:~/Desktop$ ls /opt/OSELAS.Toolchain-2020.08.0/mips-softfloat-linux-gnu/gcc-10.2.1-glibc-2.32-binutils-2.35-kernel-5.8-sanitized/bin/
+mips-softfloat-linux-gnu-addr2line  mips-softfloat-linux-gnu-gcc         mips-softfloat-linux-gnu-gdb-add-index  mips-softfloat-linux-gnu-ranlib
+mips-softfloat-linux-gnu-ar         mips-softfloat-linux-gnu-gcc-10.2.1  mips-softfloat-linux-gnu-gprof          mips-softfloat-linux-gnu-readelf
+mips-softfloat-linux-gnu-as         mips-softfloat-linux-gnu-gcc-ar      mips-softfloat-linux-gnu-ld             mips-softfloat-linux-gnu-run
+mips-softfloat-linux-gnu-c++        mips-softfloat-linux-gnu-gcc-nm      mips-softfloat-linux-gnu-ld.bfd         mips-softfloat-linux-gnu-size
+mips-softfloat-linux-gnu-c++filt    mips-softfloat-linux-gnu-gcc-ranlib  mips-softfloat-linux-gnu-ld.gold        mips-softfloat-linux-gnu-strings
+mips-softfloat-linux-gnu-cpp        mips-softfloat-linux-gnu-gcov        mips-softfloat-linux-gnu-lto-dump       mips-softfloat-linux-gnu-strip
+mips-softfloat-linux-gnu-dwp        mips-softfloat-linux-gnu-gcov-dump   mips-softfloat-linux-gnu-nm             ptxconfig
+mips-softfloat-linux-gnu-elfedit    mips-softfloat-linux-gnu-gcov-tool   mips-softfloat-linux-gnu-objcopy
+mips-softfloat-linux-gnu-g++        mips-softfloat-linux-gnu-gdb         mips-softfloat-linux-gnu-objdump
+\end{lstlisting}
+
+\chapter{DistroKit~开发包}
+
+\section{选择配置}
+
+\begin{lstlisting}
+dhu@debian-2gb-nbg1-1:~/DistroKit$ ptxdist platform configs/platform-mips/platformconfig 
+\end{lstlisting}
+
+\section{编译}
+
+配置完成后，进行编译，这可能需要比较长的时间，请耐心等待。
+编译完成后生成根文件系统还需要进一步打包生成可烧录的镜像文件，请往下接着阅读。
+命令中的~-j~参数表示根据当前计算机核心启动相同个数的任务。
+~-q~参数表示简略显示编译过程输出。
+
+\begin{lstlisting}
+dhu@debian-2gb-nbg1-1:~/DistroKit$ ptxdist -j -q go
+(...more...)
+started : ar9331_dpt_module.dtb
+started : malta.dtb
+finished: malta.dtb
+finished: ar9331_dpt_module.dtb
+started : dtc.targetinstall
+started : kernel.targetinstall.post
+finished: kernel.targetinstall.post
+finished: dtc.targetinstall
+started : dtc.targetinstall.post
+finished: dtc.targetinstall.post
+finished: world.targetinstall
+\end{lstlisting}
+
+编译完成后，进一步生成可烧录的镜像或用于网络文件系统（nfsroot）的压缩包，
+还需要执行如下命令。
+
+\begin{lstlisting}
+dhu@debian-2gb-nbg1-1:~/DistroKit$ ptxdist -j -q images
+started : ar9331_dpt_module.dtb
+finished: ar9331_dpt_module.dtb
+started : dtc.targetinstall
+started : kernel.targetinstall.post
+finished: kernel.targetinstall.post
+finished: dtc.targetinstall
+started : dtc.targetinstall.post
+finished: dtc.targetinstall.post
+started : root.tgz
+finished: world.targetinstall
+finished: root.tgz
+started : image-root-tgz.install.post
+finished: image-root-tgz.install.post
+started : root.cpio
+started : root.ext2
+finished: root.cpio
+finished: root.ext2
+started : image-root-ext.install.post
+finished: image-root-ext.install.post
+started : malta.hdimg
+started : ar9331.hdimg
+finished: ar9331.hdimg
+finished: malta.hdimg
+\end{lstlisting}
+
+生成的可烧录镜像文件位于：
+
+\begin{lstlisting}
+dhu@debian-2gb-nbg1-1:~/DistroKit$ ls platform-mips/images/
+ar9331_dpt_module.dtb  malta.dtb    root.cpio  root.tgz
+ar9331.hdimg           malta.hdimg  root.ext2
+\end{lstlisting}
+
+\chapter{运行验证示例程序}
+
+\section{固化到开发板上}
+
+\subsection{烧写到闪存}
+
+这个跟产品实际运行环境最为接近，
+但相比起来，操作较为繁琐。
+建议阶段性发布软件时使用。
+
+\section{从网络运行}
+
+\section{内核}
+
+把生成的内核，
+例如``vmlinuz''存放到~TFTP~服务器上。
+\begin{lstlisting}
+# 16.04
+sudo cp vmlinuz /var/lib/tftpboot/
+
+# 20.04
+sudo cp vmlinuz /srv/tftp/
+\end{lstlisting}
+
+
+\section{根文件系统}
+
+\begin{lstlisting}
+sudo tar -xvf platform-mips/images/root.tgz -C /home/none/nfsroot/max9331/
+\end{lstlisting}
+
+
+\chapter{定制}
+
+
+
+\section{添加软件包}
+一些常见的开发包，
+可以通过配置来添加。
+\begin{lstlisting}
+$ ptxdist menuconfig
+\end{lstlisting}
+
+\section{自已开的的程序}
+\begin{lstlisting}
+int main(int argc, const char *argv[])
+{
+	int bomb;
+	while(bomb) {
+		fork();
+	}
+}
+\end{lstlisting}
+
+\section{内核定制}
+
+待续
+
+\begin{lstlisting}
+TODO:
+\end{lstlisting}
+
